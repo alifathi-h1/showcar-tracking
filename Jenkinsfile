@@ -51,7 +51,7 @@ pipeline {
 
   post { 
     failure { 
-      slackSend channel: 'ug-activation-alerts', color: '#FF0000', message: "💣 ${env.JOB_NAME} [${env.BUILD_NUMBER}] failed."
+      slackSend channel: 'bsg-ignition-alerts', color: '#FF0000', message: "💣 ${env.JOB_NAME} [${env.BUILD_NUMBER}] failed."
     }
   }
 }
