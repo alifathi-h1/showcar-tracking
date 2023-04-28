@@ -137,7 +137,6 @@
             'saveAndExitButtonClicked',
             'consentToolShouldBeShown',
             'denyAllButtonClicked',
-            'consentManagerDisplayed',
             'consentManagerClosed',
             'consentNoticeDisplayed',
             'consentNoticeClosed',
