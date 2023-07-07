@@ -3,9 +3,18 @@ const trackingEnabled = location.hash.indexOf('tracking-off=true') < 0;
 const startTracking = () => {
     var gtm = require('./gtm');
     var dealerGtm = require('./dealer-gtm');
+    const ga4Tracking = require('./ga4-tracking');
 
     function processCommand(data) {
         var fn, args;
+
+        if (data[0] === 'ga4Event') {
+            ga4Tracking.trackGA4Event(data[1], data[2]);
+        }
+
+        if (data[0] === 'ga4PageviewEvent') {
+            ga4Tracking.trackGA4PageViewEvent(data[1], data[2]);
+        }
 
         if (data[0] === 'pagename') {
             gtm.setPagename(data[1]);
@@ -18,7 +27,7 @@ const startTracking = () => {
                 fn.apply(gtm, args);
             }
         }
-        
+
         if (data[0] === 'dealer-gtm') {
             fn = dealerGtm[data[1]];
             args = data.slice(2);
@@ -29,7 +38,7 @@ const startTracking = () => {
         
         if (data[0] === 'cmp' && window.__tcfapi && data[1] === 'onPersonalizedCookiesAllowed' && typeof data[2] === 'function') {
             var userCallback = data[2];
-            
+
             var callback = (partialTcData, success) => {
                 if (
                     success &&
