@@ -25,7 +25,7 @@ const gaClientId = () => {
     return splitted_cookie[2] + '.' + splitted_cookie[3];
 };
 
-const gaUserId = () => {
+const as24VisitorId = () => {
     const visitorCookie = cookieHelper.read('as24Visitor');
 
     return visitorCookie ? visitorCookie : undefined;
@@ -35,5 +35,5 @@ module.exports = {
     waitTillGA4PageView: waitTillGA4PageView,
     dealerId: dealerId,
     gaClientId: gaClientId,
-    gaUserId: gaUserId,
+    as24VisitorId: as24VisitorId,
 };

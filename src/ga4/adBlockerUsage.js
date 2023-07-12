@@ -2,7 +2,7 @@
  * returns "adblock active" | "no adblock detected". How to get it?.
  */
 
-const { getAdBlocker } = require('./ad-block-detection');
+const { getAdBlocker } = require('./adBlockDetection');
 
 /**
  * @param window global variable

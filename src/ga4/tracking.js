@@ -2,11 +2,13 @@ const {
     waitTillGA4PageView,
     dealerId,
     gaClientId,
-    gaUserId,
+    as24VisitorId,
 } = require('./eventParameters');
 const { loginStatus } = require('./loginStatus');
 const { adBlockerUsage } = require('./adBlockerUsage');
 const { customerId } = require('./customerId');
+const { ga4Market } = require('./market');
+const { adBlockerUsage } = require('./adBlockerUsage');
 
 const trackGA4Event = (event, otherData) => {
     if (event.name.indexOf('_') === -1) throw new Error('Event name must follow naming convention: {feature}_{action}');
@@ -32,20 +34,15 @@ const trackGA4Event = (event, otherData) => {
     });
 };
 
-const trackGA4PageViewEvent = (eventData, dataLayerVariables) => {
+const trackGA4PageViewEvent = async (eventData, dataLayerVariables) => {
     window.dataLayer = window.dataLayer || [];
-    const common_countryObj = window.dataLayer.find((x) => x.common_country);
-    const country = common_countryObj && common_countryObj.common_country;
-    if (!country) {
-        throw new Error('COMMON_COUNTRY_NOT_SET');
-    }
 
     if (dataLayerVariables) {
         window.dataLayer.push(dataLayerVariables);
     }
 
     const dealerIdValue = dealerId();
-    const market = window.document.location.hostname.split('.').pop() || undefined;
+    const adBlockerStatus = await adBlockerUsage(window);
 
     window.dataLayer.push(
         Object.assign(
@@ -55,11 +52,11 @@ const trackGA4PageViewEvent = (eventData, dataLayerVariables) => {
                 content_id: 'all',
                 dealer_id: dealerIdValue,
                 ga_client_id: gaClientId(),
-                ga_user_id: gaUserId(),
+                as24_visitor_id: as24VisitorId(),
                 login_status: loginStatus(),
-                adblocker_usage: adBlockerUsage(),
-                customer_id: customerId(undefined, dealerIdValue, undefined), // needed classified_customerId and chefplatz_ad_dealer_id dataLayervariables. How to get them?,  this line needs to be revisited when the original code from showcar-react updated
-                market: market,
+                adblocker_usage: adBlockerStatus,
+                customer_id: customerId(),
+                market: ga4Market(),
             },
             eventData
         )
