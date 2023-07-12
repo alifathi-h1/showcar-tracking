@@ -46,7 +46,8 @@ const getCustomerInfoFromUserCookie = () => {
     if (!userCookie) return;
 
     const userCookieParams = new URLSearchParams(userCookie);
-    const customerId = userCookieParams.get('CustomerID')?.replace(/[()]+/g, '');
+    let customerId = userCookieParams.get('CustomerID');
+    customerId = customerId ? customerId.replace(/[()]+/g, '') : customerId;
     const customerType = userCookieParams.get('CustomerType');
 
     return customerId && customerType ? { customerId, customerType } : undefined;

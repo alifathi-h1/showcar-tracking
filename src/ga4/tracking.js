@@ -3,10 +3,10 @@ const {
     dealerId,
     gaClientId,
     gaUserId,
-    loginStatus,
-    adBlockerUsage,
-    customerId,
-} = require('./ga4-event-parameters');
+} = require('./eventParameters');
+const { loginStatus } = require('./loginStatus');
+const { adBlockerUsage } = require('./adBlockerUsage');
+const { customerId } = require('./customerId');
 
 const trackGA4Event = (event, otherData) => {
     if (event.name.indexOf('_') === -1) throw new Error('Event name must follow naming convention: {feature}_{action}');

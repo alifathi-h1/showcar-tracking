@@ -1,5 +1,6 @@
 const cookieHelper = require('../cookieHelper');
 const { getCustomerInfo } = require('./customerId');
+const { DEALER } = require('./loginStatus');
 
 const waitTillGA4PageView = (callback) => {
     if (window.dataLayer.some((e) => e.event === 'page_view')) {
@@ -30,15 +31,9 @@ const gaUserId = () => {
     return visitorCookie ? visitorCookie : undefined;
 };
 
-const adBlockerUsage = () => {
-    // this function needs to be updated when its original function from showcar-react updated
-    return 'adblock active';
-};
-
 module.exports = {
     waitTillGA4PageView: waitTillGA4PageView,
     dealerId: dealerId,
     gaClientId: gaClientId,
     gaUserId: gaUserId,
-    adBlockerUsage: adBlockerUsage,
 };

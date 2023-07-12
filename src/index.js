@@ -3,7 +3,7 @@ const trackingEnabled = location.hash.indexOf('tracking-off=true') < 0;
 const startTracking = () => {
     var gtm = require('./gtm');
     var dealerGtm = require('./dealer-gtm');
-    const ga4Tracking = require('./ga4-tracking');
+    const ga4Tracking = require('./ga4/tracking');
 
     function processCommand(data) {
         var fn, args;
