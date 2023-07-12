@@ -34,7 +34,7 @@ const ga4Market = () => {
         const ga4MarketValue = tld === 'com' ? 'int' : tld;
 
         return isGA4Market(ga4MarketValue) ? ga4MarketValue : undefined;
-    } catch {
+    } catch (e) {
         return undefined;
     }
 };

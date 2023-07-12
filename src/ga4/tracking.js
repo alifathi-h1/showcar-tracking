@@ -8,7 +8,6 @@ const { loginStatus } = require('./loginStatus');
 const { adBlockerUsage } = require('./adBlockerUsage');
 const { customerId } = require('./customerId');
 const { ga4Market } = require('./market');
-const { adBlockerUsage } = require('./adBlockerUsage');
 
 const trackGA4Event = (event, otherData) => {
     if (event.name.indexOf('_') === -1) throw new Error('Event name must follow naming convention: {feature}_{action}');
@@ -34,7 +33,7 @@ const trackGA4Event = (event, otherData) => {
     });
 };
 
-const trackGA4PageViewEvent = async (eventData, dataLayerVariables) => {
+const trackGA4PageViewEvent = (eventData, dataLayerVariables) => {
     window.dataLayer = window.dataLayer || [];
 
     if (dataLayerVariables) {
@@ -42,27 +41,29 @@ const trackGA4PageViewEvent = async (eventData, dataLayerVariables) => {
     }
 
     const dealerIdValue = dealerId();
-    const adBlockerStatus = await adBlockerUsage(window);
-
-    window.dataLayer.push(
-        Object.assign(
-            {
-                event_name: 'page_view',
-                event_type: 'page_load',
-                content_id: 'all',
-                dealer_id: dealerIdValue,
-                ga_client_id: gaClientId(),
-                as24_visitor_id: as24VisitorId(),
-                login_status: loginStatus(),
-                adblocker_usage: adBlockerStatus,
-                customer_id: customerId(),
-                market: ga4Market(),
-            },
-            eventData
-        )
-    );
-
-    window.dataLayer.push({ event: 'page_view' });
+    
+    adBlockerUsage(window)
+        .then(adBlockerStatus => {
+            window.dataLayer.push(
+                Object.assign(
+                    {
+                        event_name: 'page_view',
+                        event_type: 'page_load',
+                        content_id: 'all',
+                        dealer_id: dealerIdValue,
+                        ga_client_id: gaClientId(),
+                        as24_visitor_id: as24VisitorId(),
+                        login_status: loginStatus(),
+                        adblocker_usage: adBlockerStatus,
+                        customer_id: customerId(),
+                        market: ga4Market(),
+                    },
+                    eventData
+                )
+            );
+        
+            window.dataLayer.push({ event: 'page_view' });
+        });
 };
 
 module.exports = { trackGA4Event: trackGA4Event, trackGA4PageViewEvent: trackGA4PageViewEvent };
