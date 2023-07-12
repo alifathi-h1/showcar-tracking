@@ -670,8 +670,6 @@
                     }
                 }
 
-                function noOp() {}
-
                 function deletePersonalizationCookiesIfNeeded(tld) {
                     var personalizationCookies = [
                         'last-search-feed',
@@ -703,16 +701,6 @@
                             ) callback();
                         }
                     );
-                }
-
-                /**
-                    Reads cookie value
-                    @param {string} cookieName
-                    @return {string}
-                */
-                function getCookieValue(cookieName) {
-                    var x = document.cookie.match('(^|;)\\s*' + cookieName + '\\s*=\\s*([^;]+)');
-                    return x ? x.pop() : '';
                 }
 
                 /**

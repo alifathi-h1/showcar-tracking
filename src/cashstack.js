@@ -23,12 +23,6 @@
             console.log('AS24 CMP not enabled');
         });
 
-    // if (tld === 'it') {
-    //     loadCmpWithAbTest();
-    // } else {
-    //     loadCmpWithoutAbTest();
-    // }
-
     /** In case we don't have a visitor id we set one. */
     function ensureVisitorId() {
         if (!/as24Visitor/.test(document.cookie)) {
@@ -124,88 +118,6 @@
         }
     }
 
-    function loadLiveRampScript(uid) {
-        var script = document.createElement('script');
-        var ref = document.getElementsByTagName('script')[0];
-        ref.parentNode.insertBefore(script, ref);
-        script.src = 'https://gdpr-wrapper.privacymanager.io/gdpr/' + uid + '/gdpr-liveramp.js';
-    }
-
-    function noOp() {}
-
-    function loadCmpWithAbTest() {
-        var userId = getCookieValue('as24Visitor');
-
-        fetchExperimentData(userId).then(function (data) {
-            function sendEvent(event) {
-                var url =
-                    'https://cmp-optimizely-fs.as24-media.eu-west-1.infinity.as24.tech/sendevent/' +
-                    data.userid +
-                    '/' +
-                    event;
-
-                if ('sendBeacon' in navigator) {
-                    navigator.sendBeacon(url);
-                } else {
-                    new Image().src = url;
-                }
-            }
-
-            function trackEventInOptimizely(cmpEvent, optimizelyEvent) {
-                window.__tcfapi('addEventListener', 2, sendEvent.bind(optimizelyEvent), cmpEvent);
-            }
-
-            trackEventInOptimizely('acceptAllButtonClicked', 'cmpAcceptAll');
-            trackEventInOptimizely('saveAndExitButtonClicked', 'cmpSaveAndExit');
-            trackEventInOptimizely('exitButtonClicked', 'cmpExit');
-            trackEventInOptimizely('saveAndExitButtonClicked', 'cmpExit');
-            trackEventInOptimizely('acceptAllButtonClicked', 'cmpExit');
-            trackEventInOptimizely('consentToolShouldBeShown', 'cmpShown');
-            trackEventInOptimizely('consentNoticeDisplayed', 'cmpNoticeDisplayed');
-
-            if (window.location.pathname.startsWith('/angebote/')) {
-                window.addEventListener('click', function (e) {
-                    if (!e || !e.target || !e.target.closest) {
-                        return;
-                    }
-
-                    var isCallButton = !!e.target.closest('a[href^="tel:"]');
-                    if (isCallButton) {
-                        sendEvent('cmpCall');
-                        return;
-                    }
-
-                    var isEmailButton = !!e.target.closest('[data-cip-id="submit"]');
-                    if (isEmailButton) {
-                        sendEvent('cmpEmail');
-                        return;
-                    }
-                });
-            }
-
-            var liverampIdByVariation = {
-                variation_1: '7fa21d14-bb68-4b5e-b85f-b5ae26b92696', // original IT
-                variation_2: '0ea30077-436d-4294-a85e-0af92282c3ea',
-                variation_3: 'b36f31e9-ba65-47f5-b151-66c307c999d9',
-                variation_4: '00527a4c-e2b6-4933-a80f-4e8792b153d4',
-            };
-
-            var liverampid = liverampIdByVariation[data.variation];
-
-            loadLiveRampScript(liverampid);
-        });
-    }
-
-    /**
-        Reads cookie value
-        @param {string} cookieName
-        @return {string}
-    */
-    function getCookieValue(cookieName) {
-        var x = document.cookie.match('(^|;)\\s*' + cookieName + '\\s*=\\s*([^;]+)');
-        return x ? x.pop() : '';
-    }
-
     /** Generates a UUID v4
         @return {string}
     */
@@ -214,19 +126,6 @@
             var r = (Math.random() * 16) | 0,
                 v = c == 'x' ? r : (r & 0x3) | 0x8;
             return v.toString(16);
-        });
-    }
-
-    /**
-        @param {string} userId
-        @return {Promise<{ data: { userid: string; variation: string; } }>}
-    */
-    function fetchExperimentData(userId) {
-        var optimizelyUrl = 'https://cmp-optimizely-fs.as24-media.eu-west-1.infinity.as24.tech/activate/';
-        var experimentUrl = optimizelyUrl + 'cmp_theme_comparison_it/';
-
-        return fetch(experimentUrl + userId).then(function (r) {
-            return r.json();
         });
     }
 
