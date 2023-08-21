@@ -60,9 +60,18 @@
 	var startTracking = function startTracking() {
 	    var gtm = __webpack_require__(2);
 	    var dealerGtm = __webpack_require__(9);
+	    var ga4Tracking = __webpack_require__(10);
 	
 	    function processCommand(data) {
 	        var fn, args;
+	
+	        if (data[0] === 'ga4Event') {
+	            ga4Tracking.trackGA4Event(data[1], data[2]);
+	        }
+	
+	        if (data[0] === 'ga4PageviewEvent') {
+	            ga4Tracking.trackGA4PageViewEvent(data[1], data[2]);
+	        }
 	
 	        if (data[0] === 'pagename') {
 	            gtm.setPagename(data[1]);
@@ -113,7 +122,7 @@
 	        ut.forEach(processCommand);
 	    }
 	
-	    __webpack_require__(10);
+	    __webpack_require__(13);
 	
 	    module.exports = {
 	        gtm: gtm,
@@ -121,14 +130,14 @@
 	    };
 	};
 	
-	__webpack_require__(11);
+	__webpack_require__(14);
 	
 	// if (window.location.hostname.split('.').pop() === 'de') {
 	//     require('./ivw');
 	// }
 	
 	if (window.location.hostname.split('.').pop() === 'at') {
-	    __webpack_require__(12);
+	    __webpack_require__(15);
 	}
 	
 	var run = function run() {
@@ -460,6 +469,275 @@
 
 /***/ }),
 /* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+	
+	var _require = __webpack_require__(11),
+	    waitTillGA4PageView = _require.waitTillGA4PageView,
+	    dealerId = _require.dealerId,
+	    ga4ClientId = _require.ga4ClientId,
+	    gaUserId = _require.gaUserId,
+	    loginStatus = _require.loginStatus,
+	    adBlockerUsage = _require.adBlockerUsage,
+	    customerId = _require.customerId;
+	
+	var trackGA4Event = function trackGA4Event(event, otherData) {
+	    if (event.name.indexOf('_') === -1) throw new Error('Event name must follow naming convention: {feature}_{action}');
+	
+	    window.dataLayer = window.dataLayer || [];
+	    var eventDetails = !event.details ? undefined : Object.entries(event.details).map(function (_ref) {
+	        var _ref2 = _slicedToArray(_ref, 2),
+	            key = _ref2[0],
+	            value = _ref2[1];
+	
+	        return key + '=' + value;
+	    }).join(';');
+	
+	    waitTillGA4PageView(function () {
+	        if (otherData) {
+	            window.dataLayer.push(otherData);
+	        }
+	
+	        window.dataLayer.push({
+	            event: 'ga4_event',
+	            event_name: event.name,
+	            event_type: event.type,
+	            event_details: eventDetails
+	        });
+	    });
+	};
+	
+	var trackGA4PageViewEvent = function trackGA4PageViewEvent(eventData, dataLayerVariables) {
+	    window.dataLayer = window.dataLayer || [];
+	    var common_countryObj = window.dataLayer.find(function (x) {
+	        return x.common_country;
+	    });
+	    var country = common_countryObj && common_countryObj.common_country;
+	    if (!country) {
+	        throw new Error('COMMON_COUNTRY_NOT_SET');
+	    }
+	
+	    if (dataLayerVariables) {
+	        window.dataLayer.push(dataLayerVariables);
+	    }
+	
+	    var dealerIdValue = dealerId();
+	    var market = window.document.location.hostname.split('.').pop() || undefined;
+	
+	    window.dataLayer.push(_extends({
+	        event_name: 'page_view',
+	        event_type: 'page_load',
+	        content_id: 'all',
+	        dealer_id: dealerIdValue,
+	        ga4_client_id: ga4ClientId(),
+	        ga_user_id: gaUserId(),
+	        login_status: loginStatus(),
+	        adblocker_usage: adBlockerUsage(),
+	        customer_id: customerId(undefined, dealerIdValue, undefined), // needed classified_customerId and chefplatz_ad_dealer_id dataLayervariables. How to get them?,  this line needs to be revisited when the original code from showcar-react updated
+	        market: market
+	    }, eventData));
+	
+	    window.dataLayer.push({ event: 'page_view' });
+	};
+	
+	module.exports = { trackGA4Event: trackGA4Event, trackGA4PageViewEvent: trackGA4PageViewEvent };
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var cookieHelper = __webpack_require__(12);
+	
+	var waitTillGA4PageView = function waitTillGA4PageView(callback) {
+	    if (window.dataLayer.some(function (e) {
+	        return e.event === 'page_view';
+	    })) {
+	        callback();
+	    } else {
+	        setTimeout(function () {
+	            return waitTillGA4PageView(callback);
+	        }, 100);
+	    }
+	};
+	
+	var ssoToken = function ssoToken() {
+	    var res = cookieHelper.read('sso');
+	
+	    return res ? res.trim().length > 0 ? res : null : null;
+	};
+	
+	var parseJwt = function parseJwt(token) {
+	    var partials = token.split('.');
+	    var jsonPayload = decodeURIComponent(atob(partials[1]));
+	
+	    try {
+	        return JSON.parse(jsonPayload);
+	    } catch (e) {
+	        return undefined;
+	    }
+	};
+	
+	var fallbackToUserCookie = function fallbackToUserCookie() {
+	    var userCookie = cookieHelper.read('User');
+	
+	    if (!userCookie || userCookie.toLowerCase().indexOf('customerid=') === -1) return;
+	
+	    var userCookieArray = userCookie.toLowerCase().split('&');
+	
+	    var _iteratorNormalCompletion = true;
+	    var _didIteratorError = false;
+	    var _iteratorError = undefined;
+	
+	    try {
+	        for (var _iterator = userCookieArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	            var el = _step.value;
+	
+	            if (el.match(/customerid=/i)) {
+	                return el.split('=')[1];
+	            }
+	            if (el.match(/customerid\(/i)) {
+	                var variantCustomerId = el.match(/\((.*?)\)/);
+	                return variantCustomerId ? variantCustomerId[1] : undefined;
+	            }
+	        }
+	    } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	    } finally {
+	        try {
+	            if (!_iteratorNormalCompletion && _iterator.return) {
+	                _iterator.return();
+	            }
+	        } finally {
+	            if (_didIteratorError) {
+	                throw _iteratorError;
+	            }
+	        }
+	    }
+	
+	    return undefined;
+	};
+	
+	var dealerId = function dealerId() {
+	    var token = ssoToken();
+	
+	    var user = token ? parseJwt(token) : { ctid: fallbackToUserCookie() };
+	
+	    if (user && user.ctid !== '') {
+	        return user.ctid;
+	    } else {
+	        return undefined;
+	    }
+	};
+	
+	var ga4ClientId = function ga4ClientId() {
+	    var clientIdCookie = cookieHelper.read('_asga');
+	
+	    if (!clientIdCookie) return;
+	
+	    var splitted_cookie = clientIdCookie.split('.');
+	    return splitted_cookie[2] + '.' + splitted_cookie[3];
+	};
+	
+	var gaUserId = function gaUserId() {
+	    var visitorCookie = cookieHelper.read('as24Visitor');
+	
+	    return visitorCookie ? visitorCookie : undefined;
+	};
+	
+	var loginStatus = function loginStatus() {
+	    // this function needs to be updated when its original function from showcar-react updated
+	    return 'not_logged_in';
+	};
+	
+	var adBlockerUsage = function adBlockerUsage() {
+	    // this function needs to be updated when its original function from showcar-react updated
+	    return 'adblock active';
+	};
+	
+	var customerId = function customerId(classifiedCustomerId, dealerId, chefplatzDealerId) {
+	    // this function needs to be updated when its original function from showcar-react updated
+	    return classifiedCustomerId || dealerId || chefplatzDealerId;
+	};
+	
+	module.exports = {
+	    waitTillGA4PageView: waitTillGA4PageView,
+	    dealerId: dealerId,
+	    ga4ClientId: ga4ClientId,
+	    gaUserId: gaUserId,
+	    loginStatus: loginStatus,
+	    adBlockerUsage: adBlockerUsage,
+	    customerId: customerId
+	};
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	var doc = document;
+	
+	function readCookie(name, options) {
+	    if (!name) {
+	        return null;
+	    }
+	
+	    var decodingFunction = options && options.decodingFunction || decodeURIComponent;
+	
+	    return decodingFunction(doc.cookie.replace(new RegExp('(?:(?:^|.*;)\\s*' + encodeURIComponent(name).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1')) || null;
+	}
+	
+	function setCookie(name, value, options) {
+	    if (!name || /^(?:expires|max\-age|path|domain|secure)$/i.test(name)) {
+	        return false;
+	    }
+	
+	    var expiresString = '';
+	
+	    if (options.expires) {
+	        var date = new Date();
+	        date.setTime(+date + options.expires);
+	        expiresString = '; expires=' + date.toGMTString();
+	    }
+	
+	    options.encodingFunction = options.encodingFunction || encodeURIComponent;
+	
+	    document.cookie = encodeURIComponent(name) + '=' + options.encodingFunction(value) + expiresString + (options.domain ? '; domain=' + options.domain : '') + (options.path ? '; path=' + options.path : '') + (options.secure ? '; secure' : '');
+	
+	    return true;
+	}
+	
+	function removeCookie(name, options) {
+	    if (hasCookie(name)) {
+	        return false;
+	    }
+	    document.cookie = encodeURIComponent(name) + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT' + (name ? '; domain=' + options.domain : '') + (options.path ? '; path=' + options.path : '');
+	    return true;
+	}
+	
+	function hasCookie(name) {
+	    if (!name) {
+	        return false;
+	    }
+	    return new RegExp('(?:^|;\\s*)' + encodeURIComponent(name).replace(/[\-\.\+\*]/g, '\\$&') + '\\s*\\=').test(document.cookie);
+	}
+	
+	module.exports = {
+	    read: readCookie,
+	    set: setCookie,
+	    remove: removeCookie
+	};
+
+/***/ }),
+/* 13 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -551,7 +829,7 @@
 	}
 
 /***/ }),
-/* 11 */
+/* 14 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -584,7 +862,7 @@
 	});
 
 /***/ }),
-/* 12 */
+/* 15 */
 /***/ (function(module, exports) {
 
 	'use strict';

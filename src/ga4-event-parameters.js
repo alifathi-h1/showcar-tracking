@@ -56,7 +56,7 @@ const dealerId = () => {
     }
 };
 
-const gaClientId = () => {
+const ga4ClientId = () => {
     const clientIdCookie = cookieHelper.read('_asga');
 
     if (!clientIdCookie) return;
@@ -89,7 +89,7 @@ const customerId = (classifiedCustomerId, dealerId, chefplatzDealerId) => {
 module.exports = {
     waitTillGA4PageView: waitTillGA4PageView,
     dealerId: dealerId,
-    gaClientId: gaClientId,
+    ga4ClientId: ga4ClientId,
     gaUserId: gaUserId,
     loginStatus: loginStatus,
     adBlockerUsage: adBlockerUsage,
