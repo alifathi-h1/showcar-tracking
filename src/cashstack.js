@@ -12,31 +12,16 @@
     // prettier-ignore
     !function(){if("function"!=typeof window.__tcfapi||window.__tcfapi&&"function"!=typeof window.__tcfapi.start){var t,a=[],e=window,i=e.document,c=e.__tcfapi?e.__tcfapi.start:function(){};if(!e.__tcfapi&&function t(){var a=!!e.frames.__tcfapiLocator;if(!a){if(i.body){var c=i.createElement("iframe");c.style.cssText="display:none",c.name="__tcfapiLocator",i.body.appendChild(c)}else setTimeout(t,5)}return!a}()||e.__tcfapi&&!e.__tcfapi.start){var f=e.__tcfapi?e.__tcfapi():[];a.push.apply(a,f),e.__tcfapi=function(...e){var i=[...e];if(!e.length)return a;if("setGdprApplies"===i[0])i.length>3&&2===parseInt(i[1],10)&&"boolean"==typeof i[3]&&(t=i[3],"function"==typeof i[2]&&i[2]("set",!0));else if("ping"===i[0]){var c={gdprApplies:t,cmpLoaded:!1,apiVersion:"2.0"};"function"==typeof i[2]&&i[2](c,!0)}else a.push(i)},e.__tcfapi.commandQueue=a,e.__tcfapi.start=c,e.addEventListener("message",function(t){var a="string"==typeof t.data,i={};try{i=a?JSON.parse(t.data):t.data}catch(c){}var f=i.__tcfapiCall;f&&e.__tcfapi(f.command,f.version,function(e,i){if(t.source){var c={__tcfapiReturn:{returnValue:e,success:i,callId:f.callId,command:f.command}};a&&(c=JSON.stringify(c)),t.source.postMessage(c,"*")}},f.parameter)},!1)}}}();
 
-    loadAs24Cmp().then(() => {
-        if (window.__as24CmpEnabled) {
-            return;
-        }
-
-        var tld = window.location.hostname.split('.').pop();
-
-        setCmpLanguage(tld, window.location.pathname);
-        hideCmpIfNeeded();
-        trackCmpEvents();
-        loadCmpWithoutAbTest();
-    }).catch(_ => {
-        var tld = window.location.hostname.split('.').pop();
-        setCmpLanguage(tld, window.location.pathname);
-        hideCmpIfNeeded();
-        trackCmpEvents();
-        loadCmpWithoutAbTest();
-        deletePersonalizationCookiesIfNeeded();
-    });
-
-    // if (tld === 'it') {
-    //     loadCmpWithAbTest();
-    // } else {
-    //     loadCmpWithoutAbTest();
-    // }
+    loadAs24Cmp()
+        .then(() => {
+            if (window.__as24CmpEnabled) {
+                return;
+            }
+            console.log('AS24 CMP not enabled');
+        })
+        .catch((_) => {
+            console.log('AS24 CMP not enabled');
+        });
 
     /** In case we don't have a visitor id we set one. */
     function ensureVisitorId() {
@@ -71,110 +56,22 @@
         }
     }
 
-    /**
-            We take the language from the domain and path and set it for the CMP.
-            For non-core countries we always set it to 'en'.
-
-            @param {string} tld - The top level domain
-            @param {string} pathname - The full page path
-         */
-    function setCmpLanguage(tld, pathname) {
-        function guessLanguage() {
-            switch (tld) {
-                case 'at':
-                    return 'de';
-                case 'be':
-                    return pathname.indexOf('/fr/') === 0 ? 'fr' : 'nl';
-                case 'lu':
-                    return 'fr';
-                case 'de':
-                case 'it':
-                case 'nl':
-                case 'fr':
-                case 'es':
-                case 'pl':
-                case 'ro':
-                case 'bg':
-                case 'cz':
-                case 'hr':
-                case 'se':
-                case 'hu':
-                case 'ru':
-                case 'tr':
-                    return tld;
-                default:
-                    return 'en';
-            }
-        }
-
-        __tcfapi('changeLanguage', null, noOp, guessLanguage());
-    }
-
-    function trackCmpEvents() {
-        function trackInGA(event) {
-            window.dataLayer = window.dataLayer || [];
-
-            if (
-                dataLayer.filter(function (x) {
-                    return x.event === 'data_ready';
-                }).length === 0
-            ) {
-                setTimeout(function () {
-                    trackInGA(event);
-                }, 100);
-                return;
-            }
-
-            window.dataLayer.push({
-                event: 'event_trigger',
-                event_category: 'CMP',
-                event_action: event,
-            });
-        }
-        var trackedCmpEvents = [
-            'acceptAllButtonClicked',
-            'exitButtonClicked',
-            'saveAndExitButtonClicked',
-            'consentToolShouldBeShown',
-            'denyAllButtonClicked',
-            'consentManagerDisplayed',
-            'consentManagerClosed',
-            'consentNoticeDisplayed',
-            'consentNoticeClosed',
-        ];
-
-        trackedCmpEvents.forEach(function (event) {
-            window.__tcfapi(
-                'addEventListener',
-                2,
-                function () {
-                    trackInGA(event);
-                },
-                event
-            );
-        });
-    }
-
     function loadAs24Cmp() {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             var script = document.createElement('script');
             var ref = document.getElementsByTagName('script')[0];
             ref.parentNode.insertBefore(script, ref);
             var culture = getCulture(window.location.hostname, window.location.pathname);
             script.type = 'module';
             script.onload = resolve;
-            var prefix = window.location.hostname.startsWith('www.autoscout24.')
-              ? ''
-              : 'https://www.autoscout24.com';
-            script.src =
-              prefix + '/assets/as24-cmp/consent-banner/' + culture + '.js';
-
+            var prefix = window.location.hostname.startsWith('www.autoscout24.') ? '' : 'https://www.autoscout24.com';
+            script.src = prefix + '/assets/as24-cmp/consent-banner/' + culture + '.js';
         });
     }
 
     function getCulture(hostname, path) {
         const tld = hostname.split('.').pop();
-        
+
         switch (tld) {
             case 'de':
                 return 'de-DE';
@@ -211,7 +108,7 @@
             case 'ru':
                 return 'ru-RU';
             case 'tr':
-                return 'tr-TR';     
+                return 'tr-TR';
             case 'be':
                 return path.startsWith('/nl/') ? 'nl-BE' : 'fr-BE';
             case 'localhost':
@@ -219,135 +116,6 @@
             default:
                 return 'en-GB';
         }
-    }
-
-    function loadLiveRampScript(uid) {
-        var script = document.createElement('script');
-        var ref = document.getElementsByTagName('script')[0];
-        ref.parentNode.insertBefore(script, ref);
-        script.src = 'https://gdpr-wrapper.privacymanager.io/gdpr/' + uid + '/gdpr-liveramp.js';
-    }
-
-    function hideCmpIfNeeded() {
-        var shouldHideCmp =
-            window.location.hostname === 'accounts.autoscout24.com' || // on Identity pages
-            document.querySelector('as24-tracking[pageid="au-company-privacy"]') || // on privacy pages
-            window.self !== window.top; // inside an iframe
-
-        if (shouldHideCmp) {
-            __tcfapi(
-                'addEventListener',
-                2,
-                function () {
-                    __tcfapi('toggleConsentTool', 2, function () { }, false);
-                },
-                ['consentToolShouldBeShown']
-            );
-        }
-    }
-
-    function noOp() { }
-
-    function loadCmpWithoutAbTest() {
-        var tldToLiveRampMap = {
-            at: '3e24114e-f793-4eba-8c0f-735086de7eb6',
-            be: '55b58bfe-4c4d-4943-bbf3-11ec3eedc57b',
-            de: 'a7e8fb93-5f1f-4375-b321-8e998143ae61',
-            es: '4411e5b3-1b15-4c38-8b0b-a1bd0a7c1c15',
-            fr: 'cd417891-edbe-4abd-9417-c6a2791634e4',
-            it: 'b36f31e9-ba65-47f5-b151-66c307c999d9',
-            lu: 'd32b30c5-1df5-4e45-825e-1f0d7ce19b08',
-            nl: '7a9273aa-bc97-4542-bed2-4ee53960a5ae',
-            com: '94a59b49-b7ea-4e1c-93c9-95a65811342b',
-            bg: 'c91d7583-8f6b-4377-9930-d2f4121c077e',
-            cz: 'af726efc-d085-4dcd-b1b2-d70bec664c9b',
-            ru: '1f94bd98-a90c-42b8-b0f6-dd27eab93973',
-            pl: 'f45e019f-1401-499f-a329-19c20067273d',
-            hu: '47d0ac99-7029-4dae-91ac-15dd5793eded',
-            hr: '04a29971-bbd1-4577-a5fb-07e85b4933d3',
-            ro: 'c4949c4e-b1b9-4434-919d-c766202554e5',
-            se: '5aeab49d-a921-494f-9b8a-84001adbab72',
-            tr: 'd54e7f74-947c-49b3-9eb8-248cbad044fb',
-            ua: '730298e4-c5c4-463b-a86c-ead192d21c6f',
-        };
-
-        var tld = window.location.hostname.split('.').pop();
-        var liverampTcf2Id = tldToLiveRampMap[tld];
-
-        loadLiveRampScript(liverampTcf2Id);
-    }
-
-    function loadCmpWithAbTest() {
-        var userId = getCookieValue('as24Visitor');
-
-        fetchExperimentData(userId).then(function (data) {
-            function sendEvent(event) {
-                var url =
-                    'https://cmp-optimizely-fs.as24-media.eu-west-1.infinity.as24.tech/sendevent/' +
-                    data.userid +
-                    '/' +
-                    event;
-
-                if ('sendBeacon' in navigator) {
-                    navigator.sendBeacon(url);
-                } else {
-                    new Image().src = url;
-                }
-            }
-
-            function trackEventInOptimizely(cmpEvent, optimizelyEvent) {
-                window.__tcfapi('addEventListener', 2, sendEvent.bind(optimizelyEvent), cmpEvent);
-            }
-
-            trackEventInOptimizely('acceptAllButtonClicked', 'cmpAcceptAll');
-            trackEventInOptimizely('saveAndExitButtonClicked', 'cmpSaveAndExit');
-            trackEventInOptimizely('exitButtonClicked', 'cmpExit');
-            trackEventInOptimizely('saveAndExitButtonClicked', 'cmpExit');
-            trackEventInOptimizely('acceptAllButtonClicked', 'cmpExit');
-            trackEventInOptimizely('consentToolShouldBeShown', 'cmpShown');
-            trackEventInOptimizely('consentNoticeDisplayed', 'cmpNoticeDisplayed');
-
-            if (window.location.pathname.startsWith('/angebote/')) {
-                window.addEventListener('click', function (e) {
-                    if (!e || !e.target || !e.target.closest) {
-                        return;
-                    }
-
-                    var isCallButton = !!e.target.closest('a[href^="tel:"]');
-                    if (isCallButton) {
-                        sendEvent('cmpCall');
-                        return;
-                    }
-
-                    var isEmailButton = !!e.target.closest('[data-cip-id="submit"]');
-                    if (isEmailButton) {
-                        sendEvent('cmpEmail');
-                        return;
-                    }
-                });
-            }
-
-            var liverampIdByVariation = {
-                variation_1: '7fa21d14-bb68-4b5e-b85f-b5ae26b92696', // original IT
-                variation_2: '0ea30077-436d-4294-a85e-0af92282c3ea',
-                variation_3: 'b36f31e9-ba65-47f5-b151-66c307c999d9',
-                variation_4: '00527a4c-e2b6-4933-a80f-4e8792b153d4',
-            };
-
-            var liverampid = liverampIdByVariation[data.variation];
-
-            loadLiveRampScript(liverampid);
-        });
-    }
-
-    /**
-        Reads cookie value
-        @param {string} cookieName
-        @return {string}
-    */
-    function getCookieValue(cookieName) {
-        var x = document.cookie.match('(^|;)\\s*' + cookieName + '\\s*=\\s*([^;]+)');
-        return x ? x.pop() : '';
     }
 
     /** Generates a UUID v4
@@ -358,19 +126,6 @@
             var r = (Math.random() * 16) | 0,
                 v = c == 'x' ? r : (r & 0x3) | 0x8;
             return v.toString(16);
-        });
-    }
-
-    /**
-        @param {string} userId
-        @return {Promise<{ data: { userid: string; variation: string; } }>}
-    */
-    function fetchExperimentData(userId) {
-        var optimizelyUrl = 'https://cmp-optimizely-fs.as24-media.eu-west-1.infinity.as24.tech/activate/';
-        var experimentUrl = optimizelyUrl + 'cmp_theme_comparison_it/';
-
-        return fetch(experimentUrl + userId).then(function (r) {
-            return r.json();
         });
     }
 
@@ -398,7 +153,7 @@
         if (domainsThatRequireConsent.includes(tld)) {
             const callback = (tcData, success) => {
                 if (success && (tcData.eventStatus === 'tcloaded' || tcData.eventStatus === 'useractioncomplete')) {
-                    window.__tcfapi('removeEventListener', 2, () => { }, tcData.listenerId);
+                    window.__tcfapi('removeEventListener', 2, () => {}, tcData.listenerId);
 
                     __tcfapi('getTCData', 2, function (tcData, success) {
                         if (
