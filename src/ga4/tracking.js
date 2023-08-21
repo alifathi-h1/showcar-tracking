@@ -1,7 +1,7 @@
 const {
     waitTillGA4PageView,
     dealerId,
-    gaClientId,
+    ga4ClientId,
     as24VisitorId,
 } = require('./eventParameters');
 const { loginStatus } = require('./loginStatus');
@@ -51,7 +51,7 @@ const trackGA4PageViewEvent = (eventData, dataLayerVariables) => {
                         event_type: 'page_load',
                         content_id: 'all',
                         dealer_id: dealerIdValue,
-                        ga_client_id: gaClientId(),
+                        ga4_client_id: ga4ClientId(),
                         as24_visitor_id: as24VisitorId(),
                         login_status: loginStatus(),
                         adblocker_usage: adBlockerStatus,

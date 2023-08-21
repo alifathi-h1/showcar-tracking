@@ -122,7 +122,7 @@
 	        ut.forEach(processCommand);
 	    }
 	
-	    __webpack_require__(13);
+	    __webpack_require__(19);
 	
 	    module.exports = {
 	        gtm: gtm,
@@ -130,14 +130,14 @@
 	    };
 	};
 	
-	__webpack_require__(14);
+	__webpack_require__(20);
 	
 	// if (window.location.hostname.split('.').pop() === 'de') {
 	//     require('./ivw');
 	// }
 	
 	if (window.location.hostname.split('.').pop() === 'at') {
-	    __webpack_require__(15);
+	    __webpack_require__(21);
 	}
 	
 	var run = function run() {
@@ -481,10 +481,19 @@
 	    waitTillGA4PageView = _require.waitTillGA4PageView,
 	    dealerId = _require.dealerId,
 	    ga4ClientId = _require.ga4ClientId,
-	    gaUserId = _require.gaUserId,
-	    loginStatus = _require.loginStatus,
-	    adBlockerUsage = _require.adBlockerUsage,
-	    customerId = _require.customerId;
+	    as24VisitorId = _require.as24VisitorId;
+	
+	var _require2 = __webpack_require__(15),
+	    loginStatus = _require2.loginStatus;
+	
+	var _require3 = __webpack_require__(16),
+	    adBlockerUsage = _require3.adBlockerUsage;
+	
+	var _require4 = __webpack_require__(13),
+	    customerId = _require4.customerId;
+	
+	var _require5 = __webpack_require__(18),
+	    ga4Market = _require5.ga4Market;
 	
 	var trackGA4Event = function trackGA4Event(event, otherData) {
 	    if (event.name.indexOf('_') === -1) throw new Error('Event name must follow naming convention: {feature}_{action}');
@@ -514,35 +523,29 @@
 	
 	var trackGA4PageViewEvent = function trackGA4PageViewEvent(eventData, dataLayerVariables) {
 	    window.dataLayer = window.dataLayer || [];
-	    var common_countryObj = window.dataLayer.find(function (x) {
-	        return x.common_country;
-	    });
-	    var country = common_countryObj && common_countryObj.common_country;
-	    if (!country) {
-	        throw new Error('COMMON_COUNTRY_NOT_SET');
-	    }
 	
 	    if (dataLayerVariables) {
 	        window.dataLayer.push(dataLayerVariables);
 	    }
 	
 	    var dealerIdValue = dealerId();
-	    var market = window.document.location.hostname.split('.').pop() || undefined;
 	
-	    window.dataLayer.push(_extends({
-	        event_name: 'page_view',
-	        event_type: 'page_load',
-	        content_id: 'all',
-	        dealer_id: dealerIdValue,
-	        ga4_client_id: ga4ClientId(),
-	        ga_user_id: gaUserId(),
-	        login_status: loginStatus(),
-	        adblocker_usage: adBlockerUsage(),
-	        customer_id: customerId(undefined, dealerIdValue, undefined), // needed classified_customerId and chefplatz_ad_dealer_id dataLayervariables. How to get them?,  this line needs to be revisited when the original code from showcar-react updated
-	        market: market
-	    }, eventData));
+	    adBlockerUsage(window).then(function (adBlockerStatus) {
+	        window.dataLayer.push(_extends({
+	            event_name: 'page_view',
+	            event_type: 'page_load',
+	            content_id: 'all',
+	            dealer_id: dealerIdValue,
+	            ga4_client_id: ga4ClientId(),
+	            as24_visitor_id: as24VisitorId(),
+	            login_status: loginStatus(),
+	            adblocker_usage: adBlockerStatus,
+	            customer_id: customerId(),
+	            market: ga4Market()
+	        }, eventData));
 	
-	    window.dataLayer.push({ event: 'page_view' });
+	        window.dataLayer.push({ event: 'page_view' });
+	    });
 	};
 	
 	module.exports = { trackGA4Event: trackGA4Event, trackGA4PageViewEvent: trackGA4PageViewEvent };
@@ -554,6 +557,12 @@
 	'use strict';
 	
 	var cookieHelper = __webpack_require__(12);
+	
+	var _require = __webpack_require__(13),
+	    getCustomerInfo = _require.getCustomerInfo;
+	
+	var _require2 = __webpack_require__(15),
+	    DEALER = _require2.DEALER;
 	
 	var waitTillGA4PageView = function waitTillGA4PageView(callback) {
 	    if (window.dataLayer.some(function (e) {
@@ -567,74 +576,10 @@
 	    }
 	};
 	
-	var ssoToken = function ssoToken() {
-	    var res = cookieHelper.read('sso');
-	
-	    return res ? res.trim().length > 0 ? res : null : null;
-	};
-	
-	var parseJwt = function parseJwt(token) {
-	    var partials = token.split('.');
-	    var jsonPayload = decodeURIComponent(atob(partials[1]));
-	
-	    try {
-	        return JSON.parse(jsonPayload);
-	    } catch (e) {
-	        return undefined;
-	    }
-	};
-	
-	var fallbackToUserCookie = function fallbackToUserCookie() {
-	    var userCookie = cookieHelper.read('User');
-	
-	    if (!userCookie || userCookie.toLowerCase().indexOf('customerid=') === -1) return;
-	
-	    var userCookieArray = userCookie.toLowerCase().split('&');
-	
-	    var _iteratorNormalCompletion = true;
-	    var _didIteratorError = false;
-	    var _iteratorError = undefined;
-	
-	    try {
-	        for (var _iterator = userCookieArray[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	            var el = _step.value;
-	
-	            if (el.match(/customerid=/i)) {
-	                return el.split('=')[1];
-	            }
-	            if (el.match(/customerid\(/i)) {
-	                var variantCustomerId = el.match(/\((.*?)\)/);
-	                return variantCustomerId ? variantCustomerId[1] : undefined;
-	            }
-	        }
-	    } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	    } finally {
-	        try {
-	            if (!_iteratorNormalCompletion && _iterator.return) {
-	                _iterator.return();
-	            }
-	        } finally {
-	            if (_didIteratorError) {
-	                throw _iteratorError;
-	            }
-	        }
-	    }
-	
-	    return undefined;
-	};
-	
 	var dealerId = function dealerId() {
-	    var token = ssoToken();
+	    var customerInfo = getCustomerInfo();
 	
-	    var user = token ? parseJwt(token) : { ctid: fallbackToUserCookie() };
-	
-	    if (user && user.ctid !== '') {
-	        return user.ctid;
-	    } else {
-	        return undefined;
-	    }
+	    return customerInfo && customerInfo.customerType === DEALER ? customerInfo.customerId : undefined;
 	};
 	
 	var ga4ClientId = function ga4ClientId() {
@@ -646,35 +591,17 @@
 	    return splitted_cookie[2] + '.' + splitted_cookie[3];
 	};
 	
-	var gaUserId = function gaUserId() {
+	var as24VisitorId = function as24VisitorId() {
 	    var visitorCookie = cookieHelper.read('as24Visitor');
 	
 	    return visitorCookie ? visitorCookie : undefined;
-	};
-	
-	var loginStatus = function loginStatus() {
-	    // this function needs to be updated when its original function from showcar-react updated
-	    return 'not_logged_in';
-	};
-	
-	var adBlockerUsage = function adBlockerUsage() {
-	    // this function needs to be updated when its original function from showcar-react updated
-	    return 'adblock active';
-	};
-	
-	var customerId = function customerId(classifiedCustomerId, dealerId, chefplatzDealerId) {
-	    // this function needs to be updated when its original function from showcar-react updated
-	    return classifiedCustomerId || dealerId || chefplatzDealerId;
 	};
 	
 	module.exports = {
 	    waitTillGA4PageView: waitTillGA4PageView,
 	    dealerId: dealerId,
 	    ga4ClientId: ga4ClientId,
-	    gaUserId: gaUserId,
-	    loginStatus: loginStatus,
-	    adBlockerUsage: adBlockerUsage,
-	    customerId: customerId
+	    as24VisitorId: as24VisitorId
 	};
 
 /***/ }),
@@ -738,6 +665,622 @@
 
 /***/ }),
 /* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _require = __webpack_require__(12),
+	    read = _require.read; // VErify what this func does.
+	
+	
+	var _require2 = __webpack_require__(14),
+	    ssoToken = _require2.ssoToken,
+	    parseJwt = _require2.parseJwt;
+	
+	/**
+	 *
+	 * @returns value for customer_id data layer variable
+	 */
+	
+	
+	var customerId = function customerId() {
+	    var customerInfo = getCustomerInfo();
+	
+	    return customerInfo && customerInfo.customerId;
+	};
+	
+	/**
+	 *
+	 * @returns UserInfo as {
+	        customerId: string;
+	        customerType: string;
+	    }
+	 */
+	var getCustomerInfo = function getCustomerInfo() {
+	    var customerInfoFromSSO = getCustomerInfoFromSSOCookie();
+	
+	    return customerInfoFromSSO || getCustomerInfoFromUserCookie();
+	};
+	
+	var getCustomerInfoFromSSOCookie = function getCustomerInfoFromSSOCookie() {
+	    var token = ssoToken();
+	
+	    if (!token) return undefined;
+	
+	    var userInfo = parseJwt(token);
+	
+	    if (!userInfo) return undefined;
+	
+	    var customerId = userInfo.ctid !== '' ? userInfo.ctid : undefined;
+	    var customerType = userInfo.cty !== '' ? userInfo.cty : undefined;
+	
+	    return customerId && customerType ? { customerId: customerId, customerType: customerType } : undefined;
+	};
+	
+	var getCustomerInfoFromUserCookie = function getCustomerInfoFromUserCookie() {
+	    var userCookie = read('User');
+	
+	    if (!userCookie) return;
+	
+	    var userCookieParams = new URLSearchParams(userCookie);
+	    var customerId = userCookieParams.get('CustomerID');
+	    customerId = customerId ? customerId.replace(/[()]+/g, '') : customerId;
+	    var customerType = userCookieParams.get('CustomerType');
+	
+	    return customerId && customerType ? { customerId: customerId, customerType: customerType } : undefined;
+	};
+	
+	module.exports = {
+	    customerId: customerId,
+	    getCustomerInfo: getCustomerInfo
+	};
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var cookieHelper = __webpack_require__(12);
+	
+	var parseJwt = function parseJwt(token) {
+	    var partials = token.split('.');
+	    var jsonPayload = decodeURIComponent(atob(partials[1]));
+	
+	    try {
+	        return JSON.parse(jsonPayload);
+	    } catch (e) {
+	        return undefined;
+	    }
+	};
+	
+	var ssoToken = function ssoToken() {
+	    var res = cookieHelper.read('sso');
+	
+	    return res ? res.trim().length > 0 ? res : null : null;
+	};
+	
+	module.exports = {
+	    parseJwt: parseJwt,
+	    ssoToken: ssoToken
+	};
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var _require = __webpack_require__(14),
+	    ssoToken = _require.ssoToken,
+	    parseJwt = _require.parseJwt;
+	
+	var DEALER = 'D'; // Classic Dealer
+	var PRIVATE_BASIC = 'B'; // Basic Private person
+	var PRIVATE = 'P'; // Private person
+	
+	/**
+	 *
+	 * @returns "not_logged_in" | "logged-in|b2c" | "logged-in|b2b" | "logged-in|other"
+	 */
+	var loginStatus = function loginStatus() {
+	    var token = ssoToken();
+	
+	    if (!token) return 'not_logged_in';
+	
+	    var user = parseJwt(token);
+	
+	    if (!user) return 'not_logged_in';
+	
+	    switch (user.cty) {
+	        case PRIVATE_BASIC:
+	        case PRIVATE:
+	            return 'logged-in|b2c';
+	
+	        case DEALER:
+	            return 'logged-in|b2b';
+	
+	        default:
+	            return 'logged-in|other';
+	    }
+	};
+	
+	module.exports = {
+	    loginStatus: loginStatus,
+	    DEALER: DEALER
+	};
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	/**
+	 * returns "adblock active" | "no adblock detected". How to get it?.
+	 */
+	
+	var _require = __webpack_require__(17),
+	    getAdBlocker = _require.getAdBlocker;
+	
+	/**
+	 * @param window global variable
+	 * @returns AdBlockerUsage as - 'no adblock detected'
+	    | 'adblock active'
+	    | 'adblock detector failed'
+	    | 'init adblock detector failed'
+	 */
+	
+	
+	var adBlockerUsage = function adBlockerUsage(window) {
+	    return new Promise(function (resolve) {
+	        getAdBlocker(window);
+	        if (typeof window.adblockDetector === 'undefined') {
+	            return resolve('init adblock detector failed');
+	        }
+	        window.adblockDetector.init({
+	            debug: false,
+	            found: function found() {
+	                return resolve('adblock active');
+	            },
+	            notfound: function notfound() {
+	                return resolve('no adblock detected');
+	            }
+	        });
+	        // In the worst case, if the adblockDetector never executes our callbacks. We give up on it after 2 seconds!
+	        setTimeout(function () {
+	            return resolve('adblock detector failed');
+	        }, 2000);
+	    });
+	};
+	
+	module.exports = {
+	    adBlockerUsage: adBlockerUsage
+	};
+
+/***/ }),
+/* 17 */
+/***/ (function(module, exports) {
+
+	// Copied from: https://github.com/AutoScout24/OSA-One-Scout-Adlib/blob/master/src/core/util/ad-block-detection.js
+	
+	// ===============================================
+	// AdBlock detector
+	//
+	// Attempts to detect the presence of Ad Blocker software and notify listener of its existence.
+	// Copyright (c) 2017 IAB
+	//
+	// The BSD-3 License
+	// Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+	// 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+	// 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+	// 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+	// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	// ===============================================
+	
+	/**
+	 * @name window.adblockDetector
+	 *
+	 * IAB Adblock detector.
+	 * Usage: window.adblockDetector.init(options);
+	 *
+	 * Options object settings
+	 *
+	 *	@prop debug:  boolean
+	 *         Flag to indicate additional debug output should be printed to console
+	 *
+	 *	@prop found: @function
+	 *         Callback function to fire if adblock is detected
+	 *
+	 *	@prop notfound: @function
+	 *         Callback function to fire if adblock is not detected.
+	 *         NOTE: this function may fire multiple times and give false negative
+	 *         responses during a test until adblock is successfully detected.
+	 *
+	 *	@prop complete: @function
+	 *         Callback function to fire once a round of testing is complete.
+	 *         The test result (boolean) is included as a parameter to callback
+	 *
+	 * example: 	window.adblockDetector.init(
+	 {
+						found: function(){ ...},
+	 					notfound: function(){...}
+					}
+	 );
+	 *
+	 *
+	 */
+	
+	'use strict';
+	
+	var getAdBlocker = function getAdBlocker(win) {
+	    var version = '1.0';
+	
+	    var ofs = 'offset',
+	        cl = 'client';
+	    var noop = function noop() {};
+	
+	    var isOldIEevents = win.addEventListener === undefined;
+	
+	    /**
+	     * Options set with default options initialized
+	     *
+	     */
+	    var _options = {
+	        loopDelay: 50,
+	        maxLoop: 5,
+	        debug: true,
+	        found: noop, // function to fire when adblock detected
+	        notfound: noop, // function to fire if adblock not detected after testing
+	        complete: noop // function to fire after testing completes, passing result as parameter
+	    };
+	
+	    var listeners = []; // event response listeners
+	    var baitNode = null;
+	    var quickBait = {
+	        cssClass: 'ad-banner banner_ad adsbygoogle ad_block adslot ad_slot advert1 content-ad'
+	    };
+	    var baitTriggers = {
+	        nullProps: [ofs + 'Parent'],
+	        zeroProps: []
+	    };
+	
+	    baitTriggers.zeroProps = [ofs + 'Height', ofs + 'Left', ofs + 'Top', ofs + 'Width', ofs + 'Height', cl + 'Height', cl + 'Width'];
+	
+	    // result object
+	    var exeResult = {
+	        quick: null,
+	        remote: null
+	    };
+	
+	    var findResult = null; // result of test for ad blocker
+	
+	    var timerIds = {
+	        test: 0,
+	        download: 0
+	    };
+	
+	    function isFunc(fn) {
+	        return typeof fn === 'function';
+	    }
+	
+	    /**
+	     * Make a DOM element
+	     */
+	    function makeEl(tag, attributes) {
+	        var attr = attributes;
+	        var el = document.createElement(tag);
+	        var k = void 0;
+	
+	        if (attr) {
+	            for (k in attr) {
+	                if (attr.hasOwnProperty(k)) {
+	                    el.setAttribute(k, attr[k]);
+	                }
+	            }
+	        }
+	
+	        return el;
+	    }
+	
+	    function attachEventListener(dom, eventName, handler) {
+	        if (isOldIEevents) {
+	            dom.attachEvent('on' + eventName, handler);
+	        } else {
+	            dom.addEventListener(eventName, handler, false);
+	        }
+	    }
+	
+	    function log(message, isError) {
+	        if (!_options.debug && !isError) {
+	            return;
+	        }
+	        if (win.console && win.console.log) {
+	            if (isError) {
+	                console.error('[ABD] ' + message);
+	            } else {
+	                console.log('[ABD] ' + message);
+	            }
+	        }
+	    }
+	
+	    // =============================================================================
+	    /**
+	     * Begin execution of the test
+	     */
+	    function beginTest(bait) {
+	        log('start beginTest');
+	        if (findResult === true) {
+	            return; // we found it. don't continue executing
+	        }
+	        castBait(bait);
+	
+	        exeResult.quick = 'testing';
+	
+	        timerIds.test = setTimeout(function () {
+	            reelIn(bait, 1);
+	        }, 5);
+	    }
+	
+	    /**
+	     * Create the bait node to see how the browser page reacts
+	     */
+	    function castBait(bait) {
+	        var d = document,
+	            b = d.body;
+	        var baitStyle = 'width: 1px !important; height: 1px !important; position: absolute !important; left: -10000px !important; top: -1000px !important;';
+	
+	        if (bait === null || typeof bait === 'string') {
+	            log('invalid bait being cast');
+	            return;
+	        }
+	
+	        if (bait.style !== null) {
+	            baitStyle += bait.style;
+	        }
+	
+	        baitNode = makeEl('div', {
+	            class: bait.cssClass,
+	            style: baitStyle
+	        });
+	
+	        log('adding bait node to DOM');
+	
+	        b.appendChild(baitNode);
+	    }
+	
+	    /**
+	     * Run tests to see if browser has taken the bait and blocked the bait element
+	     */
+	    function reelIn(bait, attemptNum) {
+	        var i = void 0;
+	        var body = document.body;
+	        var found = false;
+	
+	        if (baitNode === null) {
+	            log('recast bait');
+	            castBait(bait || quickBait);
+	        }
+	
+	        if (typeof bait === 'string') {
+	            log('invalid bait used', true);
+	            if (clearBaitNode()) {
+	                setTimeout(function () {}, 5);
+	            }
+	
+	            return;
+	        }
+	
+	        if (timerIds.test > 0) {
+	            clearTimeout(timerIds.test);
+	            timerIds.test = 0;
+	        }
+	
+	        // test for issues
+	
+	        if (body.getAttribute('abp') !== null) {
+	            log('found adblock body attribute');
+	            found = true;
+	        }
+	
+	        for (i = 0; i < baitTriggers.nullProps.length; i++) {
+	            if (baitNode[baitTriggers.nullProps[i]] === null) {
+	                if (attemptNum > 4) {
+	                    found = true;
+	                }
+	                log('found adblock null attr: ' + baitTriggers.nullProps[i]);
+	                break;
+	            }
+	            if (found === true) {
+	                break;
+	            }
+	        }
+	
+	        for (i = 0; i < baitTriggers.zeroProps.length; i++) {
+	            if (found === true) {
+	                break;
+	            }
+	            if (baitNode[baitTriggers.zeroProps[i]] === 0) {
+	                if (attemptNum > 4) {
+	                    found = true;
+	                }
+	                log('found adblock zero attr: ' + baitTriggers.zeroProps[i]);
+	            }
+	        }
+	
+	        if (window.getComputedStyle !== undefined) {
+	            var baitTemp = window.getComputedStyle(baitNode, null);
+	            if (baitTemp.getPropertyValue('display') === 'none' || baitTemp.getPropertyValue('visibility') === 'hidden') {
+	                if (attemptNum > 4) {
+	                    found = true;
+	                }
+	                log('found adblock computedStyle indicator');
+	            }
+	        }
+	
+	        if (found || attemptNum++ >= _options.maxLoop) {
+	            findResult = found;
+	            log('exiting test loop - value: ' + findResult);
+	            notifyListeners();
+	            if (clearBaitNode()) {
+	                setTimeout(function () {}, 5);
+	            }
+	        } else {
+	            timerIds.test = setTimeout(function () {
+	                reelIn(bait, attemptNum);
+	            }, _options.loopDelay);
+	        }
+	    }
+	
+	    function clearBaitNode() {
+	        if (baitNode === null) {
+	            return true;
+	        }
+	
+	        try {
+	            if (isFunc(baitNode.remove)) {
+	                baitNode.remove();
+	            }
+	            document.body.removeChild(baitNode);
+	        } catch (ex) {
+	            // something add here
+	        }
+	        baitNode = null;
+	
+	        return true;
+	    }
+	
+	    /**
+	     * Fire all registered listeners
+	     */
+	    function notifyListeners() {
+	        var i = void 0,
+	            funcs = void 0;
+	        if (findResult === null) {
+	            return;
+	        }
+	        for (i = 0; i < listeners.length; i++) {
+	            funcs = listeners[i];
+	            try {
+	                if (funcs !== null) {
+	                    if (isFunc(funcs['complete'])) {
+	                        funcs['complete'](findResult);
+	                    }
+	
+	                    if (findResult && isFunc(funcs['found'])) {
+	                        funcs['found']();
+	                    } else if (findResult === false && isFunc(funcs['notfound'])) {
+	                        funcs['notfound']();
+	                    }
+	                }
+	            } catch (ex) {
+	                log('Failure in notify listeners ' + ex.Message, true);
+	            }
+	        }
+	    }
+	
+	    /**
+	     * Attaches event listener or fires if events have already passed.
+	     */
+	    function attachOrFire() {
+	        var fireNow = false;
+	
+	        if (document.readyState) {
+	            if (document.readyState === 'complete') {
+	                fireNow = true;
+	            }
+	        }
+	
+	        var fn = function fn() {
+	            beginTest(quickBait, false);
+	        };
+	
+	        if (fireNow) {
+	            fn();
+	        } else {
+	            attachEventListener(win, 'load', fn);
+	        }
+	    }
+	
+	    win['adblockDetector'] = {
+	        /**
+	         * Version of the adblock detector package
+	         */
+	        version: version,
+	
+	        /**
+	         * Initialization function. See comments at top for options object
+	         */
+	        init: function init(options) {
+	            var k = void 0;
+	
+	            if (!options) {
+	                return;
+	            }
+	
+	            var funcs = {
+	                complete: noop,
+	                found: noop,
+	                notfound: noop
+	            };
+	
+	            for (k in options) {
+	                if (options.hasOwnProperty(k)) {
+	                    if (k === 'complete' || k === 'found' || k === 'notfound') {
+	                        funcs[k.toLowerCase()] = options[k];
+	                    } else {
+	                        _options[k] = options[k];
+	                    }
+	                }
+	            }
+	
+	            listeners.push(funcs);
+	
+	            attachOrFire();
+	        }
+	    };
+	};
+	
+	module.exports = {
+	    getAdBlocker: getAdBlocker
+	};
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	/**
+	 * @returns a value based on TLD or undefined
+	 * supported values: "de" | "at" | "be" | "it" | "hu" | "es" | "fr" | "lu" | "nl" | "bg" | "cz" | "ro" | "int" | "pl" | "hr" | "ru" | "se" | "tr" | "ua" | "gb"
+	 */
+	
+	var MarketValues = ['de', 'at', 'be', 'it', 'hu', 'es', 'fr', 'lu', 'nl', 'bg', 'cz', 'ro', 'hu', 'int', 'pl', 'hr', 'ru', 'se', 'tr', 'ua'];
+	
+	var isGA4Market = function isGA4Market(input) {
+	    return MarketValues.some(function (value) {
+	        return value === input;
+	    });
+	};
+	
+	var ga4Market = function ga4Market() {
+	    try {
+	        var tld = window.location.hostname.split('.').pop();
+	        var ga4MarketValue = tld === 'com' ? 'int' : tld;
+	
+	        return isGA4Market(ga4MarketValue) ? ga4MarketValue : undefined;
+	    } catch (e) {
+	        return undefined;
+	    }
+	};
+	
+	module.exports = {
+	    ga4Market: ga4Market
+	};
+
+/***/ }),
+/* 19 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -829,7 +1372,7 @@
 	}
 
 /***/ }),
-/* 14 */
+/* 20 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -862,7 +1405,7 @@
 	});
 
 /***/ }),
-/* 15 */
+/* 21 */
 /***/ (function(module, exports) {
 
 	'use strict';

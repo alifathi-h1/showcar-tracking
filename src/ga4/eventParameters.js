@@ -16,7 +16,7 @@ const dealerId = () => {
     return customerInfo && customerInfo.customerType === DEALER ? customerInfo.customerId : undefined;
 };
 
-const gaClientId = () => {
+const ga4ClientId = () => {
     const clientIdCookie = cookieHelper.read('_asga');
 
     if (!clientIdCookie) return;
@@ -34,6 +34,6 @@ const as24VisitorId = () => {
 module.exports = {
     waitTillGA4PageView: waitTillGA4PageView,
     dealerId: dealerId,
-    gaClientId: gaClientId,
+    ga4ClientId: ga4ClientId,
     as24VisitorId: as24VisitorId,
 };
