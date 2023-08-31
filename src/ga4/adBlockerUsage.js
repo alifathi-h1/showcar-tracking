@@ -22,8 +22,6 @@ const adBlockerUsage = (window) => {
             found: () => resolve('adblock active'),
             notfound: () => resolve('no adblock detected'),
         });
-        // In the worst case, if the adblockDetector never executes our callbacks. We give up on it after 2 seconds!
-        setTimeout(() => resolve('adblock detector failed'), 2000);
     });
 };
 
