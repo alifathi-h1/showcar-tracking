@@ -102,37 +102,7 @@ ut.push([
 
 ### GA4 tracking
 
-JavaScript way:
-Event name must follow naming convention: {feature}_{action}
-```javascript
-ut.push([
-  'ga4Event',
-  {
-    name: 'search_execution',
-    type: 'eventType',
-    details: {
-      source: 'last_search',
-      content: 'moto',
-    }
-  },
-  {
-    anotherDataLayerVariable: 'some value'
-  }
-]);
-
-ut.push([
-  'ga4PageviewEvent',
-  {
-    content_group: 'all',
-    market: 'de',
-    page_title: 'home',
-  },
-  {
-    anotherDataLayerVariable: 'some value'
-  }
-]);
-```
-- More Information about GA4 tracking can be found in [showcar-react](https://github.com/AutoScout24/showcar-react/blob/master/docs/ga4-tracking.md)
+- Please use tracking functions from [showcar-react](https://github.com/AutoScout24/showcar-react/blob/master/docs/ga4-tracking.md)
 ### DEPRECATED click tracking
 
 Custom element way:

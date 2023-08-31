@@ -3,18 +3,9 @@ const trackingEnabled = location.hash.indexOf('tracking-off=true') < 0;
 const startTracking = () => {
     var gtm = require('./gtm');
     var dealerGtm = require('./dealer-gtm');
-    const ga4Tracking = require('./ga4/tracking');
 
     function processCommand(data) {
         var fn, args;
-
-        if (data[0] === 'ga4Event') {
-            ga4Tracking.trackGA4Event(data[1], data[2]);
-        }
-
-        if (data[0] === 'ga4PageviewEvent') {
-            ga4Tracking.trackGA4PageViewEvent(data[1], data[2]);
-        }
 
         if (data[0] === 'pagename') {
             gtm.setPagename(data[1]);
