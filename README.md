@@ -10,6 +10,25 @@ Tracking library for ShowCar-based pages.
 - To run test `npm run test`
 - To run localy testing page `serve docs` and open `http://localhost:3000`
 
+## Local development (incl. CMP implementation)
+
+Open two terminals:
+
+- Build
+```sh
+npx webpack --config config/webpack.conf.js -w
+```
+
+- Serve 
+```sh
+npx serve dist/   
+```
+
+- Go to `http://local.autoscout24.de:3000/test.html`
+
+- For the CMP first make the changes in <dist/test.html> and then copy them over to <dist/index.html>
+- For changes in cashtack CMP: copy the changes from <dist/test.html> to <src/cashstack.js>
+
 ## Track actions that cause page loads
 
 If you need to track a click on an element that will cause the browser to load another page, you should use
@@ -370,14 +389,4 @@ window.ut.push([
 - [LiveRamp docs](https://faktor.atlassian.net/wiki/spaces/LPM/pages/1014169601/GDPR+for+Web)
 - [IAB TCF 2.0 standard (consent string, standard CMP API, etc.)](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/tree/master/TCFv2)
 
-## How to work on showcar-tracking locally (incl. CMP implementation)
 
-Open two terminals:
-
-- `npx webpack --config config/webpack.conf.js -w`
-- `npx serve dist/`
-
-Go to `http://local.autoscout24.de:3000/test.html`
-
-- For the CMP first make the changes in <dist/test.html> and then copy them over to <dist/index.html>
-- For changes in cashtack CMP: copy the changes from <dist/test.html> to <src/cashstack.js>

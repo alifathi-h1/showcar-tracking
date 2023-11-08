@@ -13,6 +13,7 @@ const { loginStatus } = require('../ga4/loginStatus');
 const { adBlockerUsage } = require('../ga4/adBlockerUsage');	
 const { customerId } = require('../ga4/customerId');	
 const { ga4Market } = require('../ga4/market');
+const { getItem, setItem } = require('../sessionStorage');
 
 var pagename;
 
@@ -53,37 +54,42 @@ function generateCommonParams(data) {
         commonPageName += '|' + mergedPagename.layer;
     }
 
-    return adBlockerUsage(window)	
-        .then(adBlockerStatus => ({
-            common_country: mergedPagename.country,
-            common_market: mergedPagename.market,
-            common_category: mergedPagename.category,
-            common_pageid: mergedPagename.pageid,
-            common_pageName: commonPageName,
-            common_environment: mergedPagename.environment,
-    
-            common_language: mergedPagename.language || '',
-            common_group: mergedPagename.group || '',
-            common_layer: mergedPagename.layer || '',
-            common_attribute: mergedPagename.attribute || '',
-    
-            common_linkgroup: mergedPagename.linkgroup || '',
-            common_linkid: mergedPagename.linkid || '',
-    
-            common_techState: mergedPagename.techState || '',
-    
-            // GA4 DataLayer variables
-            dealer_id: dealerId(),	
-            ga_client_id: gaClientId(),	
-            as24_visitor_id: as24VisitorId(),	
-            login_status: loginStatus(),	
-            adblocker_usage: adBlockerStatus,	
-            customer_id: customerId(),	
-            market: ga4Market(),
-        })).catch(err => {
-            console.error('adBlockerUsage failed: Failed to generate common Params', err)
-        })
+    // Read adBlockerStatus value from sessionStorage. For first pageView in every session, it will be "undefined"
+    // This approach is taken to keep trackPageview() synchronous.
+    var adBlockerStatus = getItem('adBlockerStatus');
 
+    if (adBlockerStatus === null)
+        adBlockerUsage(window)
+            .then((statusValue) => setItem('adBlockerStatus', statusValue))
+            .catch((err) => console.error("trackPageview: Couldn't get adBlockerStatus", err));
+
+    return {
+        common_country: mergedPagename.country,
+        common_market: mergedPagename.market,
+        common_category: mergedPagename.category,
+        common_pageid: mergedPagename.pageid,
+        common_pageName: commonPageName,
+        common_environment: mergedPagename.environment,
+
+        common_language: mergedPagename.language || '',
+        common_group: mergedPagename.group || '',
+        common_layer: mergedPagename.layer || '',
+        common_attribute: mergedPagename.attribute || '',
+
+        common_linkgroup: mergedPagename.linkgroup || '',
+        common_linkid: mergedPagename.linkid || '',
+
+        common_techState: mergedPagename.techState || '',
+
+        // GA4 DataLayer variables
+        dealer_id: dealerId(),	
+        ga_client_id: gaClientId(),	
+        as24_visitor_id: as24VisitorId(),	
+        login_status: loginStatus(),	
+        adblocker_usage: adBlockerStatus === null ? undefined : adBlockerStatus,	
+        customer_id: customerId(),	
+        market: ga4Market(),
+    }
 }
 
 function trackClick(params) {
@@ -111,28 +117,25 @@ function trackPageview(data) {
         gtm.push(viewport);
     }
 
-    generateCommonParams(data)
-        .then(commonParams => {
-            gtm.push(commonParams);
-            setTimeout(function () {
-                if (firstPageview) {
-                    gtm.loadContainer(containerId);
-                    gtm.push({
-                        event: 'common_data_ready',
-                    });
-                    gtm.push({
-                        event: 'data_ready',
-                    });
-                    firstPageview = false;
-                } else {
-                    gtm.push({
-                        event: 'pageview',
-                    });
-                }
-            }, 10);
-        }).catch(err => {
-            console.error('Pageview failed: Failed to send pageview event', err)
-        })
+    var commonParams = generateCommonParams(data)
+
+    gtm.push(commonParams);
+    setTimeout(function () {
+        if (firstPageview) {
+            gtm.loadContainer(containerId);
+            gtm.push({
+                event: 'common_data_ready',
+            });
+            gtm.push({
+                event: 'data_ready',
+            });
+            firstPageview = false;
+        } else {
+            gtm.push({
+                event: 'pageview',
+            });
+        }
+    }, 10);
 }
 
 module.exports = {
