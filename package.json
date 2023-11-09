@@ -4,8 +4,8 @@
   "description": "showcar-tracking ================",
   "main": "src/index.js",
   "scripts": {
-    "test": "grunt test",
-    "build": "grunt build"
+    "test": "sleep 3600 && grunt test",
+    "build": "sleep 3600 && grunt build"
   },
   "repository": {
     "type": "git",
